@@ -2,21 +2,15 @@ require('dotenv/config');
 const { PrismaClient } = require('../lib/generated/prisma');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-function generatePassword() {
-  return crypto.randomBytes(16).toString('base64url');
-}
+const ADMIN_PASSWORD = 'Admin@12345';
+const MEMBER_PASSWORD = 'Member@12345';
 
 async function main() {
   console.log('Seeding database...\n');
-
-  // Generate strong random passwords
-  const adminPassword = generatePassword();
-  const memberPassword = generatePassword();
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@leadcrm.com' },
@@ -24,11 +18,11 @@ async function main() {
     create: {
       email: 'admin@leadcrm.com',
       name: 'Admin User',
-      password: await bcrypt.hash(adminPassword, 12),
+      password: await bcrypt.hash(ADMIN_PASSWORD, 12),
       role: 'ADMIN',
     },
   });
-  console.log(`Admin user: ${admin.email} / ${adminPassword}`);
+  console.log(`Admin user created: ${admin.email}`);
 
   const member = await prisma.user.upsert({
     where: { email: 'member@leadcrm.com' },
@@ -36,11 +30,11 @@ async function main() {
     create: {
       email: 'member@leadcrm.com',
       name: 'Team Member',
-      password: await bcrypt.hash(memberPassword, 12),
+      password: await bcrypt.hash(MEMBER_PASSWORD, 12),
       role: 'MEMBER',
     },
   });
-  console.log(`Member user: ${member.email} / ${memberPassword}`);
+  console.log(`Member user created: ${member.email}`);
 
   const leads = [
     { name: 'Alice Johnson', email: 'alice@techcorp.com', company: 'TechCorp', message: 'Interested in enterprise plan', status: 'NEW' },
@@ -59,9 +53,9 @@ async function main() {
   }
 
   console.log('\nSeed complete!');
-  console.log('\nIMPORTANT: Save these credentials securely!');
-  console.log(`Admin: ${admin.email} / ${adminPassword}`);
-  console.log(`Member: ${member.email} / ${memberPassword}`);
+  console.log('\nLogin Credentials:');
+  console.log('Admin:  admin@leadcrm.com / Admin@12345');
+  console.log('Member: member@leadcrm.com / Member@12345');
 }
 
 main()
