@@ -1,13 +1,15 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fallback-secret-change-in-production'
-)
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
+
+const secret = new TextEncoder().encode(process.env.JWT_SECRET)
 
 export async function signToken(payload: { userId: string; role: string }) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
+    .setExpirationTime('1d')
     .sign(secret)
 }
 

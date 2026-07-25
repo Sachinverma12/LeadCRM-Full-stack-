@@ -61,6 +61,13 @@ export async function POST(
       }, { status: 422 })
     }
 
+    if (content.trim().length > 10000) {
+      return NextResponse.json({
+        error: 'Validation failed',
+        details: { content: 'Note content must be 10000 characters or less' },
+      }, { status: 422 })
+    }
+
     const note = await prisma.note.create({
       data: {
         content: content.trim(),

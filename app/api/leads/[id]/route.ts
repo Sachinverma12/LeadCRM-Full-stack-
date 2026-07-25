@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/session'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 // Helper: Check if user can access this lead
 async function getAccessibleLead(leadId: string) {
   const user = await getCurrentUser()
@@ -62,12 +64,18 @@ export async function PATCH(
       if (typeof name !== 'string' || name.trim().length === 0) {
         return NextResponse.json({ error: 'Validation failed', details: { name: 'Name cannot be empty' } }, { status: 422 })
       }
+      if (name.trim().length > 255) {
+        return NextResponse.json({ error: 'Validation failed', details: { name: 'Name must be 255 characters or less' } }, { status: 422 })
+      }
       updateData.name = name.trim()
     }
 
     if (email !== undefined) {
-      if (typeof email !== 'string' || !email.includes('@')) {
+      if (typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
         return NextResponse.json({ error: 'Validation failed', details: { email: 'A valid email is required' } }, { status: 422 })
+      }
+      if (email.trim().length > 254) {
+        return NextResponse.json({ error: 'Validation failed', details: { email: 'Email must be 254 characters or less' } }, { status: 422 })
       }
       updateData.email = email.trim().toLowerCase()
     }
