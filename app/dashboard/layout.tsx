@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { LayoutDashboard, Users, LogOut, Menu, X } from 'lucide-react'
-import Footer from '@/components/Footer'
 
 interface User {
   id: string
@@ -150,7 +149,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="p-4 md:p-6 lg:p-8">
           {children}
         </main>
-        <Footer />
       </div>
     </div>
   )
