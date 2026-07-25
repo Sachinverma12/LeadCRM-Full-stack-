@@ -40,9 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma generated client
-/lib/generated/prisma
-
 # temp files
 temp_build.mjs
 _temp_build.js
