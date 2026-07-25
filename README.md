@@ -1,152 +1,211 @@
 # LeadCRM — Lead Management System
 
-A full-featured CRM built with **Next.js 16**, **Prisma**, **PostgreSQL**, and **Tailwind CSS**. Includes public lead capture, authenticated dashboard, role-based access (Admin/Member), activity logging, and notes.
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router)
-- **Database**: PostgreSQL via Prisma ORM
-- **Auth**: JWT (jose) + bcryptjs password hashing
-- **UI**: Tailwind CSS + shadcn/ui components + Lucide icons
-- **Styling**: tw-animate-css for animations
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- PostgreSQL database
-
-### Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/leadcrm"
-JWT_SECRET="your-secure-secret-key-change-in-production"
-```
-
-### Installation
-
-```bash
-npm install
-npx prisma migrate dev
-npx prisma generate
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### Seed an Admin User
-
-Since there's no public signup (admin creates accounts manually), use Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
-Generate a bcrypt hash:
-```bash
-node -e "console.log(require('bcryptjs').hashSync('your-password', 10))"
-```
-
-Add a row to the `User` table with:
-- `email`: your email
-- `password`: the bcrypt hash
-- `name`: your name
-- `role`: ADMIN
+A full-featured CRM for managing business leads, tracking activities, and closing deals. Built with **Next.js 16**, **Prisma**, **PostgreSQL**, and **Tailwind CSS**.
 
 ---
 
-## API Endpoints
+## Quick Links
+
+| Resource | Link |
+|----------|------|
+| **GitHub Repo** | [https://github.com/Sachinverma12/LeadCRM-Full-stack-](https://github.com/Sachinverma12/LeadCRM-Full-stack-) |
+| **Live App** | [https://leadcrm-full-stack-81hp.vercel.app/](https://leadcrm-full-stack-81hp.vercel.app/) |
+| **API Docs** | See [API Documentation](#api-documentation) below |
+
+---
+
+## Test Credentials
+
+### Admin Account
+| Field | Value |
+|-------|-------|
+| Email | `admin01@gmail.com` |
+| Password | `Admin@12345` |
+| Access | All leads, user management, delete, assign/reassign |
+
+### Member Account
+| Field | Value |
+|-------|-------|
+| Email | `member@leadcrm.com` |
+| Password | `Member@12345` |
+| Access | Only leads assigned to them |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Database | PostgreSQL (Neon) |
+| ORM | Prisma 7 |
+| Auth | JWT (jose) + bcryptjs |
+| UI | shadcn/ui + Tailwind CSS 4 |
+| Icons | Lucide React |
+| Testing | Vitest |
+
+---
+
+## Features
+
+- **Public Lead Capture** — Landing page form for submitting leads without authentication
+- **Role-Based Access** — Admin sees all leads; Member sees only assigned leads
+- **Activity Logging** — Automatic tracking of status changes, notes, and assignments
+- **Notes System** — Add notes to any lead
+- **Lead Assignment** — Admin can assign/reassign leads to team members
+- **Dashboard** — Stats cards showing lead counts by status
+- **Search & Filter** — Paginated leads list with status and text search
+- **Responsive Design** — Mobile-friendly with sidebar navigation
+- **Security** — Rate limiting, input validation, security headers, JWT auth
+
+---
+
+## Getting Started (Local Development)
+
+### Prerequisites
+- Node.js 20+
+- PostgreSQL database
+
+### Setup
+```bash
+# Clone the repo
+git clone https://github.com/Sachinverma12/LeadCRM-Full-stack-.git
+cd LeadCRM-Full-stack-
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your DATABASE_URL and JWT_SECRET
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed test users
+npm run db:seed
+
+# Start development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## API Documentation
 
 ### Authentication
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/auth/login` | No | Login with email + password → returns user + sets session cookie |
-| POST | `/api/auth/logout` | No | Clears session cookie |
-| GET | `/api/auth/me` | Yes | Returns the currently authenticated user |
+| POST | `/api/auth/login` | No | Login with email + password |
+| POST | `/api/auth/logout` | No | Clear session cookie |
+| GET | `/api/auth/me` | Yes | Get current user |
+
+**POST /api/auth/login**
+```json
+// Request
+{ "email": "admin01@gmail.com", "password": "Admin@12345" }
+
+// Response (200)
+{
+  "user": {
+    "id": "cms07t4wn0000q4uaomkw52pq",
+    "email": "admin01@gmail.com",
+    "name": "Admin User",
+    "role": "ADMIN"
+  }
+}
+```
 
 ### Leads
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/leads` | No | Public lead submission (name, email, company?, message?) |
-| GET | `/api/leads` | Yes | List leads (paginated, filterable). Members see only assigned leads |
-| GET | `/api/leads/[id]` | Yes | Get single lead details |
-| PATCH | `/api/leads/[id]` | Yes | Update lead fields (name, email, company, message, status) |
-| DELETE | `/api/leads/[id]` | Yes (Admin) | Delete a lead and all associated notes/activities |
+| POST | `/api/leads` | No | Submit a new lead (public) |
+| GET | `/api/leads` | Yes | List leads (paginated, filterable) |
+| GET | `/api/leads/:id` | Yes | Get single lead |
+| PATCH | `/api/leads/:id` | Yes | Update lead |
+| DELETE | `/api/leads/:id` | Admin | Delete lead |
 
-**Query Parameters for GET /api/leads:**
-- `page` (default: 1)
-- `limit` (default: 10, max: 100)
-- `status` — filter by LeadStatus (NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST)
-- `assignedTo` — filter by user ID (Admin only)
-- `search` — search name, email, company (case-insensitive)
+**POST /api/leads** (Public)
+```json
+// Request
+{
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "company": "Acme Corp",
+  "message": "Interested in services"
+}
+
+// Response (201)
+{
+  "lead": {
+    "id": "...",
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "company": "Acme Corp",
+    "status": "NEW"
+  }
+}
+```
+
+**GET /api/leads** (Authenticated)
+```
+Query Parameters:
+  page      - Page number (default: 1)
+  limit     - Items per page (default: 10, max: 100)
+  status    - Filter by status (NEW, CONTACTED, QUALIFIED, PROPOSAL, WON, LOST)
+  assignedTo - Filter by user ID (Admin only)
+  search    - Search name, email, company
+```
 
 ### Notes
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/leads/[id]/notes` | Yes | List all notes for a lead |
-| POST | `/api/leads/[id]/notes` | Yes | Add a note to a lead |
+| GET | `/api/leads/:id/notes` | Yes | List notes for a lead |
+| POST | `/api/leads/:id/notes` | Yes | Add a note |
+
+**POST /api/leads/:id/notes**
+```json
+// Request
+{ "content": "Follow-up call scheduled for next week" }
+
+// Response (201)
+{
+  "note": {
+    "id": "...",
+    "content": "Follow-up call scheduled for next week",
+    "author": { "id": "...", "name": "Admin User" }
+  }
+}
+```
 
 ### Assignments
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| PATCH | `/api/leads/[id]/assign` | Yes (Admin) | Reassign lead to another user |
+| PATCH | `/api/leads/:id/assign` | Admin | Reassign lead to another user |
 
 ### Activity Log
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/leads/[id]/activity` | Yes | Get paginated activity log for a lead |
+| GET | `/api/leads/:id/activity` | Yes | Paginated activity log |
 
----
+### Status Values
 
-## Sample API Requests
-
-### Login as Admin
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"your-password"}'
-```
-
-### Create a Lead (Public)
-```bash
-curl -X POST http://localhost:3000/api/leads \
-  -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com","company":"Acme Inc","message":"Interested in your services"}'
-```
-
-### List Leads (Authenticated)
-```bash
-curl http://localhost:3000/api/leads?page=1&limit=10&status=NEW
-```
-
-### Update Lead Status
-```bash
-curl -X PATCH http://localhost:3000/api/leads/[ID] \
-  -H "Content-Type: application/json" \
-  -d '{"status":"CONTACTED"}'
-```
-
-### Add a Note
-```bash
-curl -X POST http://localhost:3000/api/leads/[ID]/notes \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Called the client, interested in demo"}'
-```
-
-### Assign Lead (Admin only)
-```bash
-curl -X PATCH http://localhost:3000/api/leads/[ID]/assign \
-  -H "Content-Type: application/json" \
-  -d '{"assignedToId":"user-id-here"}'
-```
+| Status | Description |
+|--------|-------------|
+| `NEW` | Newly created (default) |
+| `CONTACTED` | Initial contact made |
+| `QUALIFIED` | Lead meets criteria |
+| `PROPOSAL` | Proposal sent |
+| `WON` | Deal closed successfully |
+| `LOST` | Deal lost |
 
 ---
 
@@ -155,13 +214,24 @@ curl -X PATCH http://localhost:3000/api/leads/[ID]/assign \
 | Feature | Admin | Member |
 |---------|-------|--------|
 | View all leads | ✅ | ❌ (only assigned) |
-| Create leads | ✅ | ✅ |
-| Edit any lead | ✅ | ❌ (only assigned) |
+| Edit leads | ✅ | ❌ (only assigned) |
 | Delete leads | ✅ | ❌ |
-| Assign/reassign leads | ✅ | ❌ |
-| Add notes to any lead | ✅ | ❌ (only assigned) |
-| View activity logs | ✅ | ❌ (only assigned) |
-| Users management page | ✅ | ❌ (redirected) |
+| Assign/reassign | ✅ | ❌ |
+| Add notes | ✅ | ✅ (assigned only) |
+| View activity | ✅ | ✅ (assigned only) |
+| User management | ✅ | ❌ |
+
+---
+
+## Security Features
+
+- **Server-side middleware** — JWT verification on all protected routes
+- **Rate limiting** — Login: 5 attempts/min, Public form: 10/hour per IP
+- **Input validation** — Email regex, length limits on all fields
+- **Security headers** — X-Frame-Options, HSTS, CSP, X-Content-Type-Options
+- **JWT expiry** — 1-day token lifetime
+- **Password hashing** — bcrypt with 12 salt rounds
+- **No password exposure** — Passwords never returned in API responses
 
 ---
 
@@ -170,27 +240,94 @@ curl -X PATCH http://localhost:3000/api/leads/[ID]/assign \
 ```
 lead-platform/
 ├── app/
-│   ├── api/auth/       # Auth endpoints (login, logout, me)
-│   ├── api/leads/      # Leads CRUD + notes + assign + activity
-│   ├── dashboard/      # Protected dashboard pages
-│   ├── login/          # Login page
-│   └── page.tsx        # Public lead capture form
-├── components/ui/       # shadcn UI components
+│   ├── api/auth/         # Auth endpoints (login, logout, me)
+│   ├── api/leads/        # Leads CRUD + notes + assign + activity
+│   ├── dashboard/        # Protected dashboard pages
+│   ├── login/            # Login page
+│   └── page.tsx          # Public lead capture form
+├── components/
+│   ├── Footer.tsx        # Site-wide footer
+│   └── ui/               # shadcn UI components
 ├── lib/
-│   ├── auth.ts         # JWT sign/verify helpers
-│   ├── session.ts      # getCurrentUser() helper
-│   ├── prisma.ts       # Prisma client singleton
-│   └── activity.ts     # Activity logging helpers
+│   ├── auth.ts           # JWT sign/verify
+│   ├── session.ts        # getCurrentUser()
+│   ├── prisma.ts         # Prisma client singleton
+│   ├── rate-limit.ts     # Rate limiting utility
+│   └── activity.ts       # Activity logging
 ├── prisma/
-│   └── schema.prisma   # Database schema
-└── middleware.ts        # Auth + role-based middleware
+│   ├── schema.prisma     # Database schema
+│   └── seed.js           # Test user creation
+├── tests/
+│   ├── auth.test.ts      # Auth unit tests
+│   └── e2e-flow.test.ts  # Integration tests
+├── middleware.ts          # Auth + role-based middleware
+├── API.md                # Full API documentation
+└── package.json
 ```
 
-## Deploy on Vercel
+---
+
+## Testing
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+**Test Coverage:**
+- `tests/auth.test.ts` — 4 unit tests (JWT sign/verify, invalid tokens, expiry)
+- `tests/e2e-flow.test.ts` — 8 integration tests (lead CRUD, auth flows, notes)
+
+---
+
+## AI Usage
+
+This project was developed with the assistance of an AI coding assistant (OpenCode). The AI was used for:
+
+- **Code Generation** — Generating boilerplate for API routes, Prisma schema, and UI components
+- **Security Audit** — Performing a comprehensive security review and implementing fixes (middleware, rate limiting, input validation, security headers)
+- **Documentation** — Writing API documentation, README, and code comments
+- **Debugging** — Diagnosing build failures on Vercel and fixing deployment issues
+
+**What I changed manually:**
+- Customized the UI design and styling to match the dark theme
+- Adjusted the business logic for role-based access control
+- Modified the seed script to use specific test credentials
+- Configured environment variables and deployment settings
+- Reviewed and approved all AI-generated code before committing
+
+---
+
+## Assumptions
+
+1. **No public signup** — Users are created manually by an admin. The public form is for lead capture only.
+2. **Single-tenant** — The system is designed for a single organization, not multi-tenant.
+3. **PostgreSQL required** — Uses Prisma with PostgreSQL-specific features (driver adapter).
+4. **Email-based auth** — No social login, OAuth, or magic links. Simple email + password.
+5. **Throwaway credentials** — Test credentials use non-production emails and simple passwords.
+6. **JWT in cookies** — Authentication uses HTTP-only cookies, not Authorization headers.
+7. **Admin creates members** — There is no self-registration. Admin invites/creates team members.
+8. **Activity is append-only** — Activity logs cannot be deleted or modified.
+9. **Notes are permanent** — Once added, notes cannot be deleted (by design for audit trail).
+10. **Status transitions** — Any status can transition to any other status (no workflow enforcement).
+
+---
+
+## Deployment
 
 1. Push to GitHub
-2. Import project in [Vercel](https://vercel.com/new)
-3. Add environment variables (`DATABASE_URL`, `JWT_SECRET`)
+2. Import in [Vercel](https://vercel.com/new)
+3. Add environment variables:
+   - `DATABASE_URL` — PostgreSQL connection string
+   - `JWT_SECRET` — Random secret (use `openssl rand -base64 64`)
 4. Deploy — Vercel auto-detects Next.js
+5. Run seed: `npm run db:seed`
 
-For database, use [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Railway](https://railway.app) for hosted PostgreSQL.
+---
+
+## License
+
+This project was built for Digital Heroes Training Task.
